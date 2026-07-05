@@ -1,0 +1,559 @@
+/* ------------------------------------------------
+   Random Color Palette Generator — Styles
+   ------------------------------------------------ */
+
+/* ----- Reset ----- */
+
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+
+/* ----- Base ----- */
+
+html, body {
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background: #1a1a1a;
+    overflow: hidden;           /* Prevent scrolling — layout fills the viewport */
+    user-select: none;          /* Prevent accidental text selection */
+    -webkit-user-select: none;
+}
+
+body {
+    display: flex;
+    flex-direction: column;     /* Palette fills space, controls sit at the bottom */
+}
+
+
+/* ----- Palette — Horizontal colour columns ----- */
+
+.palette {
+    display: flex;
+    flex: 1;                    /* Take all available vertical space */
+    min-height: 0;
+}
+
+.color-column {
+    flex: 1;                    /* Each column gets equal width */
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);      /* Set dynamically by script.js */
+    transition: background 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Smooth colour transition */
+    cursor: pointer;
+    min-width: 0;               /* Prevent flex overflow on small screens */
+}
+
+/* Vertical divider between columns */
+.color-column::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgba(0, 0, 0, 0.15);
+}
+
+.color-column:last-child::after {
+    display: none;              /* No divider after the last column */
+}
+
+/* Locked visual indicator — white ring */
+.color-column.locked {
+    box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.5);
+}
+
+
+/* ----- Colour Info (hex label + lock) ----- */
+
+.color-info {
+    position: relative;
+    z-index: 2;                  /* Sit above the ::after pseudo-element */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Hex code badge */
+.hex-code {
+    display: inline-block;
+    padding: 8px 16px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    transition: transform 0.2s ease, background 0.2s ease;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.color-column:hover .hex-code {
+    transform: scale(1.08);
+    background: rgba(0, 0, 0, 0.65);
+}
+
+/* Flash feedback when the hex is copied */
+.color-column.copied .hex-code {
+    background: rgba(255, 255, 255, 0.9);
+    color: #1a1a1a;
+    transform: scale(1.08);
+}
+
+
+/* ----- Lock Button ----- */
+
+.lock-btn {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+    opacity: 0.4;               /* Hidden by default, revealed on hover */
+}
+
+.color-column:hover .lock-btn {
+    opacity: 1;
+}
+
+.lock-btn:hover {
+    background: rgba(0, 0, 0, 0.55);
+    transform: translateX(-50%) scale(1.1);
+}
+
+.lock-btn:active {
+    transform: translateX(-50%) scale(0.88);  /* Press feedback */
+}
+
+/* When the column is locked the button stays visible */
+.color-column.locked .lock-btn {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.color-column.locked .lock-btn:hover {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.color-column.locked .lock-btn:active {
+    transform: translateX(-50%) scale(0.88);
+}
+
+
+/* ----- Bottom Controls Bar ----- */
+
+.controls {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    padding: 16px 24px;
+    background: #1a1a1a;
+    border-top: 1px solid #333;
+    position: relative;
+    z-index: 10;                /* Sit above palette columns */
+}
+
+.controls-left {
+    position: absolute;
+    left: 24px;
+    display: flex;
+    gap: 8px;
+}
+
+.controls-right {
+    position: absolute;
+    right: 24px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.load-wrapper {
+    position: relative;         /* Anchor for the dropdown */
+}
+
+
+/* ----- Saved-Palettes Dropdown ----- */
+
+.saved-dropdown {
+    position: absolute;
+    bottom: calc(100% + 8px);   /* Pop upward above the button */
+    right: 0;
+    min-width: 220px;
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 4px;
+    display: none;              /* Hidden by default */
+    z-index: 100;
+    max-height: 260px;
+    overflow-y: auto;           /* Scroll if many saved palettes */
+}
+
+.saved-dropdown.visible {
+    display: block;
+}
+
+.saved-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.15s;
+    color: #ccc;
+    font-size: 13px;
+}
+
+.saved-item:hover {
+    background: #3a3a3a;
+}
+
+.saved-item:active {
+    background: #4a4a4a;
+}
+
+/* Delete button inside each saved item */
+.saved-item .delete-saved {
+    opacity: 0;                 /* Hidden by default, shown on row hover */
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: opacity 0.15s, background 0.15s;
+}
+
+.saved-item:hover .delete-saved {
+    opacity: 1;
+}
+
+.saved-item .delete-saved:hover {
+    background: #4a1a1a;
+    color: #f44;
+}
+
+/* Empty state for the dropdown */
+.saved-empty {
+    padding: 12px;
+    text-align: center;
+    color: #666;
+    font-size: 12px;
+}
+
+
+/* ----- Toast Notification ----- */
+
+.export-toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 20px;
+    background: #fff;
+    color: #1a1a1a;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 200;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;       /* Don't block clicks underneath */
+    white-space: nowrap;
+}
+
+.export-toast.visible {
+    opacity: 1;
+}
+
+
+/* ----- Center Controls (Generate button + hint) ----- */
+
+.controls-center {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.generate-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    border: none;
+    border-radius: 10px;
+    background: #fff;
+    color: #1a1a1a;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    letter-spacing: 0.5px;
+}
+
+.generate-btn:hover {
+    transform: scale(1.04);
+    box-shadow: 0 4px 20px rgba(255, 255, 255, 0.15);
+}
+
+.generate-btn:active {
+    transform: scale(0.94);
+    background: #e0e0e0;
+}
+
+/* Small control buttons (+ / - / save / load / export) */
+.ctrl-btn {
+    width: 36px;
+    height: 36px;
+    border: 1px solid #444;
+    border-radius: 8px;
+    background: transparent;
+    color: #aaa;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ctrl-btn:hover {
+    background: #333;
+    color: #fff;
+}
+
+.ctrl-btn:active {
+    transform: scale(0.88);
+    background: #444;
+}
+
+
+/* ----- Tooltip (via data-tooltip attribute) ----- */
+
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 5px 10px;
+    background: #111;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    border-radius: 6px;
+    border: 1px solid #333;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 50;
+}
+
+[data-tooltip]:hover::after {
+    opacity: 1;
+}
+
+.generate-btn[data-tooltip]::after {
+    bottom: calc(100% + 12px);  /* Extra spacing for the larger button */
+}
+
+/* Keyboard hint */
+.hint {
+    color: #666;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.hint kbd {
+    padding: 2px 8px;
+    background: #333;
+    border-radius: 4px;
+    color: #ccc;
+    font-size: 12px;
+    font-family: inherit;
+    border: 1px solid #555;
+}
+
+
+/* ----- Save Modal ----- */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 300;               /* Highest z-index — on top of everything */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;       /* Hidden by default */
+    transition: opacity 0.2s ease;
+}
+
+.modal-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-card {
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 14px;
+    padding: 28px 32px 24px;
+    min-width: 320px;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    transform: scale(0.92) translateY(8px);   /* Entrance animation start */
+    transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.modal-overlay.visible .modal-card {
+    transform: scale(1) translateY(0);         /* Entrance animation end */
+}
+
+.modal-title {
+    color: #fff;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.modal-input {
+    width: 100%;
+    padding: 12px 14px;
+    background: #1a1a1a;
+    border: 1px solid #444;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.modal-input:focus {
+    border-color: #777;
+}
+
+.modal-input::placeholder {
+    color: #666;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.modal-btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+}
+
+.modal-btn:active {
+    transform: scale(0.94);
+}
+
+.modal-cancel {
+    background: #333;
+    color: #aaa;
+}
+
+.modal-cancel:hover {
+    background: #3a3a3a;
+    color: #fff;
+}
+
+.modal-confirm {
+    background: #fff;
+    color: #1a1a1a;
+}
+
+.modal-confirm:hover {
+    background: #e0e0e0;
+}
+
+
+/* ----- Responsive: small screens ----- */
+
+@media (max-width: 600px) {
+    .hex-code {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+
+    .lock-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+        bottom: 16px;
+    }
+
+    .controls {
+        padding: 12px 16px;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    /* Move side controls into the flex flow instead of absolute positioning */
+    .controls-left,
+    .controls-right {
+        position: static;
+    }
+
+    .generate-btn {
+        padding: 10px 20px;
+        font-size: 13px;
+    }
+
+    .hint {
+        font-size: 11px;
+    }
+}

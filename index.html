@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Palette Generator</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="color-engine.js" defer></script>
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <div class="palette" id="palette"></div>
+
+    <div class="modal-overlay" id="saveModal">
+        <div class="modal-card">
+            <div class="modal-title">Save Palette</div>
+            <input class="modal-input" id="modalNameInput" type="text" placeholder="Enter palette name..." maxlength="60" autocomplete="off">
+            <div class="modal-actions">
+                <button class="modal-btn modal-cancel" id="modalCancel">Cancel</button>
+                <button class="modal-btn modal-confirm" id="modalSave">&#128190; Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <div class="controls-left">
+            <button class="ctrl-btn" id="addBtn" title="Add color" data-tooltip="Add color">+</button>
+            <button class="ctrl-btn" id="removeBtn" title="Remove color" data-tooltip="Remove color">-</button>
+        </div>
+        <div class="controls-center">
+            <button class="generate-btn" id="generateBtn" data-tooltip="Generate new palette">&#9654; Generate</button>
+            <span class="hint">Press <kbd>SPACEBAR</kbd></span>
+        </div>
+        <div class="controls-right">
+            <button class="ctrl-btn" id="saveBtn" title="Save palette" data-tooltip="Save palette">&#128190;</button>
+            <div class="load-wrapper">
+                <button class="ctrl-btn" id="loadBtn" title="Load palette" data-tooltip="Load palette">&#128193;</button>
+                <div class="saved-dropdown" id="savedDropdown"></div>
+            </div>
+            <button class="ctrl-btn" id="exportCssBtn" title="Export as CSS variables" data-tooltip="Export CSS">&#9632;</button>
+        </div>
+    </div>
+</body>
+</html>
