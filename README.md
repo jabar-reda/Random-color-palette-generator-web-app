@@ -4,8 +4,6 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-the link [![link](https://redajabar-404.github.io/Random-color-palette-generator-web-app/](LINK)
-
 ---
 
 ## ✨ Features
