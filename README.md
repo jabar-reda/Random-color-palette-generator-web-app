@@ -44,7 +44,6 @@
 - **Click to copy** – tap any column to copy its hex code
 - **Keyboard shortcut** – press `Spacebar` to generate a new palette
 - **Responsive** – adapts gracefully to mobile screens
-- **PWA ready** – service worker for offline support
 - **Zero dependencies** – no frameworks, no build tools, no npm
 
 ---
@@ -54,7 +53,6 @@
 ### Prerequisites
 
 - A modern browser (Chrome, Firefox, Safari, Edge)
-- For PWA features (service worker): a local HTTP server or HTTPS
 
 ### Installation
 
@@ -69,7 +67,7 @@ cd Random-color-palette-generator-web-app
 
 ### Using a local server (recommended for full features)
 
-Some features (service worker, clipboard API) work best when served over HTTP. Start a local server with:
+Some features (clipboard API) work best when served over HTTP. Start a local server with:
 
 ```bash
 # Python 3
@@ -99,9 +97,6 @@ Then open **http://localhost:8000** in your browser.
 │   └── drag-drop.js        # HTML5 Drag & Drop column reordering
 ├── assets/
 │   └── screenshot.svg      # App preview image (this README)
-├── icons/icon.svg          # PWA icon
-├── sw.js                   # Service worker (offline support)
-├── manifest.json           # PWA manifest
 ├── test_server.py          # Dev server + file existence check
 └── README.md               # This file
 ```
