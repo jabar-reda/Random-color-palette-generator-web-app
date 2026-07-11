@@ -1,102 +1,204 @@
-/**
- * Oklch Color Engine
- *
- * Converts Oklch (lightness, chroma, hue) to sRGB hex values and
- * generates harmonious color palettes using the Oklch color space.
- *
- * Reference: https://bottosson.github.io/posts/oklab/
- */
+const rand = (min, max) => min + Math.random() * (max - min);
 
-/**
- * Convert Oklch to a hex color string.
- *
- * Oklch is a cylindrical representation of Oklab — a perceptually uniform
- * color space designed by Björn Ottosson.
- *
- * @param {number} l - Lightness (0..1)
- * @param {number} c - Chroma (saturation, usually 0..0.4)
- * @param {number} h - Hue in degrees (0..360)
- * @returns {string} Hex color e.g. "#FF8800"
- */
+function hslToHex(h, s, l) {
+  s /= 100; l /= 100;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n, k = (n + h / 30) % 12) => l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+  const toHex = v => Math.max(0, Math.min(255, Math.round(v * 255))).toString(16).padStart(2, '0');
+  return '#' + toHex(f(0)) + toHex(f(8)) + toHex(f(4));
+}
+
+function oklchToLinearRGB(l, c, h) {
+  const a = c * Math.cos(h * Math.PI / 180);
+  const b = c * Math.sin(h * Math.PI / 180);
+  let l1 = l + 0.3963377774 * a + 0.2158037573 * b;
+  let m1 = l - 0.1055613458 * a - 0.0638541728 * b;
+  let s1 = l - 0.0894841775 * a - 1.2914855480 * b;
+  l1 **= 3; m1 **= 3; s1 **= 3;
+  return [
+    +4.0767416621 * l1 - 3.3077115913 * m1 + 0.2309699292 * s1,
+    -1.2684380046 * l1 + 2.6097574011 * m1 - 0.3413193965 * s1,
+    -0.0041960863 * l1 - 0.7034186147 * m1 + 1.7076147010 * s1
+  ];
+}
+
+function isInGamut(r, g, b) {
+  return r >= 0 && r <= 1 && g >= 0 && g <= 1 && b >= 0 && b <= 1;
+}
+
 function oklchToHex(l, c, h) {
-    // Convert hue from degrees to radians and derive a/b components
-    const hRad = h * Math.PI / 180;
-    const a = c * Math.cos(hRad);
-    const b = c * Math.sin(hRad);
-
-    // Convert from Oklab to linear sRGB via the LMS intermediate space
-    let l_ = l + 0.3963377774 * a + 0.2158037573 * b;
-    let m_ = l - 0.1055613458 * a - 0.0638541728 * b;
-    let s_ = l - 0.0894841775 * a - 1.2914855480 * b;
-
-    // Cube the LMS values to linearize
-    l_ = l_ ** 3; m_ = m_ ** 3; s_ = s_ ** 3;
-
-    // Linear sRGB transform matrix
-    let r = +4.0767416621 * l_ - 3.3077115913 * m_ + 0.2309699292 * s_;
-    let g = -1.2684380046 * l_ + 2.6097574011 * m_ - 0.3413193965 * s_;
-    let b_ = -0.0041960863 * l_ - 0.7034186147 * m_ + 1.7076147010 * s_;
-
-    // Clamp to [0, 255] and format as hex
-    const clamp = v => Math.min(255, Math.max(0, Math.round(v * 255)));
-    const toHex = v => clamp(v).toString(16).padStart(2, '0');
-
-    return '#' + toHex(r) + toHex(g) + toHex(b_);
+  const [r, g, b] = oklchToLinearRGB(l, c, h);
+  const toSRGB = v => v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
+  const toHex = v => Math.min(255, Math.max(0, Math.round(toSRGB(v) * 255))).toString(16).padStart(2, '0');
+  return '#' + toHex(r) + toHex(g) + toHex(b);
 }
 
-/**
- * Return a random float in [min, max).
- */
-function rand(min, max) {
-    return min + Math.random() * (max - min);
+function hexToOklch(hex) {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const lin = v => v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  let lLms = Math.cbrt(0.4122214708 * lin(r) + 0.5363325363 * lin(g) + 0.0514459929 * lin(b));
+  let mLms = Math.cbrt(0.2119034982 * lin(r) + 0.6806995451 * lin(g) + 0.1073969566 * lin(b));
+  let sLms = Math.cbrt(0.0883024619 * lin(r) + 0.2817188376 * lin(g) + 0.6299787005 * lin(b));
+  const L = 0.2104542553 * lLms + 0.7936177850 * mLms - 0.0040720468 * sLms;
+  const a = 1.9779984951 * lLms - 2.4285922050 * mLms + 0.4505937099 * sLms;
+  const bLab = 0.0259040371 * lLms + 0.7827717662 * mLms - 0.8086757660 * sLms;
+  return { l: L, c: Math.sqrt(a * a + bLab * bLab), h: (Math.atan2(bLab, a) * 180 / Math.PI + 360) % 360 };
 }
 
-/**
- * Generate a harmonious color palette using Oklch.
- *
- * Five "roles" define lightness/chroma/hue-shift ranges. Each column
- * picks a role (shuffled for variety) and computes a color relative to
- * a shared base hue. Locked columns retain their existing color.
- *
- * @param {number} count - Number of palette columns (2..10)
- * @param {string[]} locked - Array of hex strings or nullish for free slots
- * @returns {string[]} Array of hex color strings
- */
-function generateOklchPalette(count, locked) {
-    const lockedArr = locked || [];
+function gamutClamp(l, c, h) {
+  const [r, g, b] = oklchToLinearRGB(l, c, h);
+  if (isInGamut(r, g, b)) return oklchToHex(l, c, h);
+  let lo = 0, hi = c;
+  for (let i = 0; i < 10; i++) {
+    const mid = (lo + hi) / 2;
+    const [cr, cg, cb] = oklchToLinearRGB(l, mid, h);
+    isInGamut(cr, cg, cb) ? lo = mid : hi = mid;
+  }
+  return oklchToHex(l, lo, h);
+}
 
-    // Pick a random base hue — all colors are offset from this
-    const baseHue = rand(0, 360);
+function hueAwareL(h, lo, hi) {
+  const hp = ((h % 360) + 360) % 360;
+  let l = lo + (hi - lo) * Math.random();
+  if (hp > 60 && hp < 180) {
+    const f = Math.sin((hp - 60) / 120 * Math.PI);
+    l = Math.max(l, 0.48 + f * 0.15);
+  }
+  return l;
+}
 
-    // Each role defines lightness, chroma, and hue-shift ranges.
-    // Together they produce a cohesive yet varied palette.
-    const roles = [
-        { l: [0.20, 0.28], c: [0.04, 0.08], hueShift: [0, 0] },      // Dark neutral
-        { l: [0.50, 0.60], c: [0.12, 0.18], hueShift: [0, 0] },      // Mid neutral
-        { l: [0.75, 0.85], c: [0.06, 0.12], hueShift: [0, 0] },      // Light neutral
-        { l: [0.50, 0.60], c: [0.18, 0.25], hueShift: [130, 170] },  // Accent cool
-        { l: [0.38, 0.48], c: [0.02, 0.05], hueShift: [30, 60] },    // Warm dark
-    ];
+function generateOklchPalette(count, locked, mode = 'random') {
+  const colors = Array.from({ length: count }, (_, i) => locked?.[i] || null);
+  const free = colors.reduce((a, c, i) => c ? a : [...a, i], []);
+  if (!free.length) return colors;
 
-    // Fisher-Yates shuffle for varied role assignment
-    const shuffled = [...roles];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  const baseHue = rand(0, 360);
+
+  const superCounts = mode === 'super' ? { 'neutral-accent':0, warm:0, cool:0, pastel:0, dual:0 } : null;
+  const allSuperModes = superCounts ? Object.keys(superCounts) : null;
+
+  free.forEach((idx, fi) => {
+    const t = free.length > 1 ? fi / (free.length - 1) : 0.5;
+    let l, c, h;
+
+    switch (mode) {
+      case 'analogous':
+        h = ((baseHue - 20 + 40 * t) + rand(-4, 4) + 360) % 360;
+        l = hueAwareL(h, 0.38, 0.75);
+        c = rand(0.10, 0.18);
+        break;
+
+      case 'monochromatic':
+        h = ((baseHue + rand(-3, 3)) + 360) % 360;
+        l = 0.28 + t * 0.50;
+        c = 0.06 + (1 - Math.abs(2 * t - 1)) * 0.14;
+        l += rand(-0.02, 0.02);
+        c += rand(-0.01, 0.01);
+        break;
+
+      case 'neutral-accent':
+        if (idx === 0) {
+          h = ((baseHue + rand(-10, 10)) + 360) % 360;
+          l = hueAwareL(h, 0.45, 0.65);
+          c = rand(0.15, 0.22);
+        } else {
+          h = ((baseHue + rand(-15, 15)) + 360) % 360;
+          l = 0.28 + t * 0.45 + rand(-0.04, 0.04);
+          c = rand(0.03, 0.08);
+        }
+        break;
+
+      case 'warm':
+        h = ((340 + baseHue / 360 * 80 + rand(-20, 20)) + 360) % 360;
+        l = hueAwareL(h, 0.30, 0.78);
+        c = rand(0.10, 0.20);
+        break;
+
+      case 'cool':
+        h = ((180 + baseHue / 360 * 120 + rand(-20, 20)) + 360) % 360;
+        l = hueAwareL(h, 0.30, 0.78);
+        c = rand(0.10, 0.20);
+        break;
+
+      case 'pastel':
+        h = ((baseHue + rand(-40, 40)) + 360) % 360;
+        l = 0.72 + t * 0.15 + rand(-0.03, 0.03);
+        c = rand(0.03, 0.08);
+        break;
+
+      case 'dual':
+        const half = Math.ceil(free.length / 2);
+        const isSecond = fi >= half;
+        const subIdx = isSecond ? fi - half : fi;
+        const subTotal = isSecond ? free.length - half : half;
+        const subT = subTotal > 1 ? subIdx / (subTotal - 1) : 0.5;
+        h = ((baseHue + (isSecond ? rand(150, 210) : rand(-10, 10))) + rand(-6, 6) + 360) % 360;
+        l = hueAwareL(h, 0.25 + subT * 0.50, 0.04);
+        c = rand(0.10, 0.18);
+        break;
+
+      case 'super':
+        {
+          let available = allSuperModes.filter(m => superCounts[m] < 3);
+          if (!available.length) available = allSuperModes;
+          const chosen = available[Math.floor(Math.random() * available.length)];
+          superCounts[chosen]++;
+          switch (chosen) {
+            case 'neutral-accent':
+              if (idx === 0) {
+                h = ((baseHue + rand(-10, 10)) + 360) % 360;
+                l = hueAwareL(h, 0.45, 0.65);
+                c = rand(0.15, 0.22);
+              } else {
+                h = ((baseHue + rand(-15, 15)) + 360) % 360;
+                l = 0.28 + t * 0.45 + rand(-0.04, 0.04);
+                c = rand(0.03, 0.08);
+              }
+              break;
+            case 'warm':
+              h = ((340 + baseHue / 360 * 80 + rand(-20, 20)) + 360) % 360;
+              l = hueAwareL(h, 0.30, 0.78);
+              c = rand(0.10, 0.20);
+              break;
+            case 'cool':
+              h = ((180 + baseHue / 360 * 120 + rand(-20, 20)) + 360) % 360;
+              l = hueAwareL(h, 0.30, 0.78);
+              c = rand(0.10, 0.20);
+              break;
+            case 'pastel':
+              h = ((baseHue + rand(-40, 40)) + 360) % 360;
+              l = 0.72 + t * 0.15 + rand(-0.03, 0.03);
+              c = rand(0.03, 0.08);
+              break;
+            case 'dual':
+              h = ((baseHue + (Math.random() < 0.5 ? rand(-10, 10) : rand(150, 210))) + 360) % 360;
+              l = hueAwareL(h, 0.25 + t * 0.50, 0.04);
+              c = rand(0.10, 0.18);
+              break;
+          }
+        }
+        break;
+
+      default:
+        h = ((baseHue + rand(-35, 35)) + 360) % 360;
+        l = hueAwareL(h, 0.35, 0.78);
+        c = rand(0.10, 0.20);
+        break;
     }
 
-    const result = [];
-    for (let i = 0; i < count; i++) {
-        // Preserve locked colors
-        if (lockedArr[i]) { result.push(lockedArr[i]); continue; }
+    l = Math.max(0.10, Math.min(0.92, l));
+    c = Math.max(0.03, Math.min(0.30, c));
 
-        // Cycle through shuffled roles, compute Oklch and convert to hex
-        const role = shuffled[i % 5];
-        const h = (baseHue + rand(role.hueShift[0], role.hueShift[1])) % 360;
-        const l = rand(role.l[0], role.l[1]);
-        const c = rand(role.c[0], role.c[1]);
-        result.push(oklchToHex(l, c, h).toUpperCase());
-    }
+    colors[idx] = gamutClamp(l, c, h);
+  });
 
-    return result;
+  if (free.length > 1) {
+    const sortedFree = [...free].sort((a, b) => hexToOklch(colors[a]).l - hexToOklch(colors[b]).l);
+    const sortedColors = sortedFree.map(i => colors[i]);
+    free.forEach((pos, idx) => { colors[pos] = sortedColors[idx]; });
+  }
+
+  return colors;
 }

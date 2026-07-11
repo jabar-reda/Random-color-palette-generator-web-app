@@ -1,15 +1,97 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Palette Generator</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1a2e">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='10' cy='12' r='5' fill='%23ff6b6b'/%3E%3Ccircle cx='22' cy='12' r='5' fill='%234ecdc4'/%3E%3Ccircle cx='16' cy='24' r='5' fill='%23ffe66d'/%3E%3C/svg%3E">
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAA5UlEQVR4nGNgGAWjYBQMdiBTXv4/derU/3ULFoBpEB+f+rAnt/7nygv9LzVWA9MgPtmWgyz9n52NgUHi2NSDLPU7ewQDg8SpZjkuR+CynCxHgIIZn+UwDIsOUDDjsRyGiY4OUFwT4wCQOpB6UFwT4wCQOqoEP3o0EAp+kqNhwENgwNMAMdFA01xAyBF0KQdgYEBLwkENZBgq/6c6zfhfF7kYTIP4dLMcZOn/Z7kYGCQ+YJbTxRGgYMZnOQzTLDpAcU2MA0DqaOIAQsFP82gY8BAY8DTAMNC5gJAj6GI5DAxoSTisAADGSyrp8yx3awAAAABJRU5ErkJggg==">
     <link rel="stylesheet" href="style.css">
     <script src="color-engine.js" defer></script>
-    <script src="script.js" defer></script>
+    <script src="js/ui.js" defer></script>
+    <script src="js/history.js" defer></script>
+    <script src="js/detail-panel.js" defer></script>
+    <script src="js/saved-palettes.js" defer></script>
+    <script src="js/export.js" defer></script>
+    <script src="js/drag-drop.js" defer></script>
+    <script src="js/app.js" defer></script>
 </head>
 <body>
+    <div class="controls" id="controlsBar">
+        <div class="controls-left">
+            <div class="harmony-wrapper">
+                <button class="ctrl-btn harmony-btn" id="harmonyBtn" title="Harmony mode">🎨</button>
+                <div class="harmony-dropdown" id="harmonyDropdown">
+                    <div class="harmony-item" data-mode="random">Random</div>
+                    <div class="harmony-item" data-mode="analogous">Analogous</div>
+                    <div class="harmony-item" data-mode="monochromatic">Monochromatic</div>
+                    <div class="harmony-separator"></div>
+                    <div class="harmony-item" data-mode="neutral-accent">Neutral + Accent</div>
+                    <div class="harmony-item" data-mode="warm">Warm</div>
+                    <div class="harmony-item" data-mode="cool">Cool</div>
+                    <div class="harmony-item" data-mode="pastel">Pastel</div>
+                    <div class="harmony-item" data-mode="dual">Dual</div>
+                    <div class="harmony-item" data-mode="super">Super</div>
+                    </div>
+            </div>
+            <button class="ctrl-btn" id="addBtn" title="Add color" data-tooltip="Add color">+</button>
+            <button class="ctrl-btn" id="removeBtn" title="Remove color" data-tooltip="Remove color">-</button>
+            <button class="theme-btn" id="themeBtn" title="Toggle theme" data-tooltip="Theme"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+        </div>
+        <div class="controls-center">
+            <button class="generate-btn" id="generateBtn" data-tooltip="Generate new palette">&#9654; Generate</button>
+            <span class="hint">Press <kbd>SPACEBAR</kbd></span>
+        </div>
+        <div class="controls-right">
+            <div class="logo-wrapper">
+                <span class="site-logo" id="siteLogo" title="Palette Generator">
+                    <svg viewBox="0 0 32 32" width="22" height="22">
+                        <circle cx="10" cy="12" r="5" fill="#ff6b6b"/>
+                        <circle cx="22" cy="12" r="5" fill="#4ecdc4"/>
+                        <circle cx="16" cy="24" r="5" fill="#ffe66d"/>
+                    </svg>
+                </span>
+            </div>
+            <div class="history-group">
+                <button class="ctrl-btn" id="undoBtn" title="Undo (Ctrl+Z)" data-tooltip="Undo"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
+                <button class="ctrl-btn" id="redoBtn" title="Redo (Ctrl+Shift+Z)" data-tooltip="Redo"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/></svg></button>
+            </div>
+            <button class="ctrl-btn" id="saveBtn" title="Save palette" data-tooltip="Save palette"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></button>
+            <div class="load-wrapper">
+                <button class="ctrl-btn" id="loadBtn" title="Load palette" data-tooltip="Load palette"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button>
+                <div class="saved-dropdown" id="savedDropdown"></div>
+            </div>
+            <button class="ctrl-btn" id="shareBtn" title="Copy share link" data-tooltip="Share"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
+            <div class="export-wrapper">
+                <button class="ctrl-btn" id="exportBtn" title="Export palette" data-tooltip="Export"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="12" y1="4" x2="12" y2="20"/></svg></button>
+                <div class="export-dropdown" id="exportDropdown">
+                    <div class="export-item" data-format="css">CSS Variables</div>
+                    <div class="export-item" data-format="scss">SCSS Variables</div>
+                    <div class="export-item" data-format="json">JSON</div>
+                    <div class="export-item" data-format="svg">SVG Image</div>
+                    <div class="export-item" data-format="png">PNG Image</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="palette" id="palette"></div>
+
+    <div class="detail-panel" id="detailPanel">
+        <div class="detail-header">
+            <span class="detail-title">Color Details</span>
+            <button class="detail-close" id="detailClose">&times;</button>
+        </div>
+        <div class="detail-body">
+            <div class="detail-swatch" id="detailSwatch"></div>
+            <div class="detail-values" id="detailValues"></div>
+            <div class="detail-actions">
+                <button class="detail-copy-btn" id="detailCopyBtn">&#128203; Copy Hex</button>
+            </div>
+        </div>
+    </div>
 
     <div class="modal-overlay" id="saveModal">
         <div class="modal-card">
@@ -22,23 +104,10 @@
         </div>
     </div>
 
-    <div class="controls">
-        <div class="controls-left">
-            <button class="ctrl-btn" id="addBtn" title="Add color" data-tooltip="Add color">+</button>
-            <button class="ctrl-btn" id="removeBtn" title="Remove color" data-tooltip="Remove color">-</button>
-        </div>
-        <div class="controls-center">
-            <button class="generate-btn" id="generateBtn" data-tooltip="Generate new palette">&#9654; Generate</button>
-            <span class="hint">Press <kbd>SPACEBAR</kbd></span>
-        </div>
-        <div class="controls-right">
-            <button class="ctrl-btn" id="saveBtn" title="Save palette" data-tooltip="Save palette">&#128190;</button>
-            <div class="load-wrapper">
-                <button class="ctrl-btn" id="loadBtn" title="Load palette" data-tooltip="Load palette">&#128193;</button>
-                <div class="saved-dropdown" id="savedDropdown"></div>
-            </div>
-            <button class="ctrl-btn" id="exportCssBtn" title="Export as CSS variables" data-tooltip="Export CSS">&#9632;</button>
-        </div>
-    </div>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
 </body>
 </html>
