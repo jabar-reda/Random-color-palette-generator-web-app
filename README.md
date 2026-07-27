@@ -1,17 +1,10 @@
-# 🎨 Random Color Palette Generator
+# 🎨 Chroma — Color Palette Generator
 
 > A minimalist, perceptually uniform color palette generator powered by the **Oklch** color space.
 
-[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://redajabar-404.github.io/Random-color-palette-generator-web-app/)
+> **⚠️ Beta branch** — experimental redesign with card layout, live preview, and refined UI.
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-
-<p align="center">
-  <img src="assets/screenshot.png" alt="App preview — dark themed palette generator with 5 color columns" width="700">
-</p>
-
-<p align="center">
-  <a href="https://redajabar-404.github.io/Random-color-palette-generator-web-app/"><strong>🚀 Launch Live Demo</strong></a>
-</p>
 
 ---
 
@@ -40,7 +33,7 @@
 - **Save & load** – persist palettes in `localStorage`
 - **Export** – CSS, SCSS, JSON, SVG, PNG
 - **Share via URL** – palette encoded in hash
-- **Dark / Light theme** – toggle with one click
+- **Dark / Light theme** – adapts to system preference automatically
 - **Click to copy** – tap any column to copy its hex code
 - **Keyboard shortcut** – press `Spacebar` to generate a new palette
 - **Responsive** – adapts gracefully to mobile screens
@@ -56,12 +49,13 @@
 
 ### Installation
 
-1. **Clone** or download the repository
+1. **Clone** the repository and checkout the `beta` branch
 2. Open **`index.html`** in any modern browser
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/Random-color-palette-generator-web-app.git
 cd Random-color-palette-generator-web-app
+git checkout beta
 # Just open index.html
 ```
 
@@ -72,9 +66,6 @@ Some features (clipboard API) work best when served over HTTP. Start a local ser
 ```bash
 # Python 3
 python -m http.server 8000
-
-# Or with the included test server
-python test_server.py
 ```
 
 Then open **http://localhost:8000** in your browser.
@@ -89,15 +80,14 @@ Then open **http://localhost:8000** in your browser.
 ├── color-engine.js         # Oklch engine – conversion math + 9 harmony modes
 ├── js/
 │   ├── ui.js               # App namespace, DOM refs, utilities
-│   ├── app.js              # Event wiring, updatePalette, theme
+│   ├── app.js              # Event wiring, updatePalette, keyboard shortcuts
 │   ├── history.js          # Undo/redo (50 states)
 │   ├── detail-panel.js     # Color detail panel (HEX/RGB/HSL/OKLCH/contrast)
 │   ├── saved-palettes.js   # localStorage persistence
 │   ├── export.js           # CSS/SCSS/JSON/SVG/PNG export + URL sharing
 │   └── drag-drop.js        # HTML5 Drag & Drop column reordering
 ├── assets/
-│   └── screenshot.svg      # App preview image (this README)
-├── test_server.py          # Dev server + file existence check
+│   └── screenshot.png      # App preview image (this README)
 └── README.md               # This file
 ```
 
@@ -135,7 +125,7 @@ Most palette generators use **HSL** (Hue / Saturation / Lightness), but HSL is *
 | 🗑️ Delete saved | Hover a saved item → click ✕ |
 | 📤 Export | Click the grid icon → pick CSS/SCSS/JSON/SVG/PNG |
 | 🔗 Share | Click the share icon → URL copied |
-| 🌗 Theme toggle | Click the sun/moon icon |
+| 🌗 Theme | Follows system (OS) dark/light preference |
 | ➕ Add column | Click **+** (max 10) |
 | ➖ Remove column | Click **–** (min 2) |
 
