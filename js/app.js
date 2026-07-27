@@ -1,5 +1,21 @@
 let currentHarmonyMode = 'random';
 
+function updateLivePreview(colors) {
+  const pv = document.getElementById('previewMockup');
+  if (!pv) return;
+  const c = [...colors];
+  while (c.length < 5) c.push(c[c.length - 1] || '#333333');
+  pv.style.setProperty('--pv-primary', c[0]);
+  pv.style.setProperty('--pv-primary-text', getTextColorForBg(c[0]));
+  pv.style.setProperty('--pv-surface', c[1]);
+  pv.style.setProperty('--pv-surface-text', getTextColorForBg(c[1]));
+  pv.style.setProperty('--pv-accent', c[2]);
+  pv.style.setProperty('--pv-accent-text', getTextColorForBg(c[2]));
+  pv.style.setProperty('--pv-bg', c[3]);
+  pv.style.setProperty('--pv-bg-text', getTextColorForBg(c[3]));
+  pv.style.setProperty('--pv-muted', c[4]);
+}
+
 function updatePalette() {
   const c = App.cols();
   const locked = c.map(v => v.dataset.locked === 'true' ? v.dataset.color : null);
@@ -11,8 +27,13 @@ function updatePalette() {
     const hexEl = col.querySelector('.hex-code');
     hexEl.textContent = colors[i];
     hexEl.style.color = getTextColorForBg(colors[i]);
+    col.style.animation = 'none';
+    requestAnimationFrame(() => {
+      col.style.animation = `colFadeIn 400ms cubic-bezier(0.16, 1, 0.3, 1) ${i * 60}ms both`;
+    });
   });
   updateAmbientBackground(colors);
+  updateLivePreview(colors);
   App.history.pushHistory();
 }
 
@@ -32,25 +53,6 @@ function setHarmonyMode(mode) {
   });
   App.hd.classList.remove('visible');
   updatePalette();
-}
-
-function updateTheme(theme) {
-  document.documentElement.setAttribute('data-theme', theme);
-  try { localStorage.setItem('palette-theme', theme); } catch {}
-  App.tb.innerHTML = theme === 'dark' ? App.icons.theme : App.icons.moon;
-  App.tb.title = theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme';
-}
-
-function getTheme() {
-  try { return localStorage.getItem('palette-theme') || 'dark'; } catch { return 'dark'; }
-}
-
-function toggleTheme() {
-  const current = document.documentElement.getAttribute('data-theme');
-  updateTheme(current === 'light' ? 'dark' : 'light');
-  App.cols().forEach(col => {
-    col.querySelector('.hex-code').style.color = getTextColorForBg(col.dataset.color);
-  });
 }
 
 App.gb.addEventListener('click', updatePalette);
@@ -73,6 +75,7 @@ App.ab.addEventListener('click', () => {
   newCol.querySelector('.hex-code').style.color = getTextColorForBg(newColor);
 
   updateAmbientBackground(c.map(v => v.dataset.color));
+  updateLivePreview(c.map(v => v.dataset.color));
   App.history.pushHistory();
 });
 
@@ -84,6 +87,7 @@ App.rb.addEventListener('click', () => {
   App.p.removeChild(App.p.lastElementChild);
   const colors = App.cols().map(v => v.dataset.color);
   updateAmbientBackground(colors);
+  updateLivePreview(colors);
   App.history.pushHistory();
 });
 
@@ -142,8 +146,6 @@ App.dcb.addEventListener('click', () => {
   if (App.detail.detailHex) App.copyToClipboard(App.detail.detailHex, 'Hex copied!');
 });
 
-App.tb.addEventListener('click', toggleTheme);
-
 document.addEventListener('keydown', e => {
   if (e.code === 'Space' && e.target === document.body) {
     e.preventDefault();
@@ -167,8 +169,6 @@ App.hb.title = 'Mode: random';
 App.hd.querySelectorAll('.harmony-item').forEach(item => {
   item.classList.toggle('active', item.dataset.mode === 'random');
 });
-
-updateTheme(getTheme());
 
 for (let i = 5; i--;) App.initColumnListeners(App.p.appendChild(App.createColumn()));
 

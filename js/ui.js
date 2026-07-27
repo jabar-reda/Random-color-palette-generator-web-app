@@ -9,8 +9,7 @@ App.icons = {
   export: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="12" y1="4" x2="12" y2="20"/></svg>',
   undo: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',
   redo: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/></svg>',
-  theme: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>',
-  moon: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
+
 };
 
 (function () {
@@ -39,7 +38,6 @@ App.icons = {
   App.mni = $('modalNameInput');
   App.ms = $('modalSave');
   App.mc = $('modalCancel');
-  App.tb = $('themeBtn');
   App.cb = $('controlsBar');
   App.sl = $('siteLogo');
 
@@ -122,6 +120,7 @@ App.icons = {
       col.querySelector('.lock-btn').innerHTML = locked ? App.icons.lock : App.icons.unlock;
     });
     updateAmbientBackground(cols);
+    updateLivePreview(cols);
   };
 })();
 
@@ -129,7 +128,14 @@ function getTextColorForBg(hex) {
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
-  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5 ? '#000' : '#fff';
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  if (lum > 0.5) {
+    const f = 0.18;
+    return '#' + [r, g, b].map(c => Math.round(c * f).toString(16).padStart(2, '0')).join('');
+  } else {
+    const f = 0.88;
+    return '#' + [r, g, b].map(c => Math.round(c + (255 - c) * f).toString(16).padStart(2, '0')).join('');
+  }
 }
 
 function updateAmbientBackground(colors) {
