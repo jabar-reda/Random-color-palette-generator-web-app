@@ -2,7 +2,7 @@
 
 > A minimalist, perceptually uniform color palette generator powered by the **Oklch** color space.
 
-[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://redajabar-404.github.io/Random-color-palette-generator-web-app/)
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://jabar-reda.github.io/Random-color-palette-generator-web-app/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 <p align="center">
@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://redajabar-404.github.io/Random-color-palette-generator-web-app/"><strong>🚀 Launch Live Demo</strong></a>
+  <a href="https://jabar-reda.github.io/Random-color-palette-generator-web-app/"><strong>🚀 Launch Live Demo</strong></a>
 </p>
 
 ---
